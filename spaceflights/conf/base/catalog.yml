@@ -1,0 +1,229 @@
+# Here you can define all your data sets by using simple YAML syntax.
+#
+# Documentation for this file format can be found in "The Data Catalog"
+# Link: https://docs.kedro.org/en/stable/data/data_catalog.html
+#
+# COVID-19 Chile Analysis Project Data Catalog
+# Proyecto de Análisis COVID-19 Chile 2020-2022
+
+# =====================================================
+# RAW DATA - Datos originales (01_raw)
+# =====================================================
+
+# Dataset principal - COVID Chile 2020
+raw_covid_2020:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/chile_completo_covid_2020.csv
+  load_args:
+    encoding: utf-8
+
+# Dataset principal - COVID Chile 2021  
+raw_covid_2021:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/chile_completo_covid_2021.csv
+  load_args:
+    sep: ";"
+    encoding: cp1252
+
+# Dataset principal - COVID Chile 2022
+raw_covid_2022:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/chile_completo_covid_2022.csv
+  load_args:
+    encoding: utf-8
+
+# =====================================================
+# INTERMEDIATE DATA - Datos procesados parcialmente (02_intermediate)
+# =====================================================
+
+intermediate_covid_2020:
+  type: pandas.CSVDataset
+  filepath: data/02_intermediate/covid_2020_clean.csv
+  load_args:
+    encoding: latin-1
+    parse_dates: ['date']
+  save_args:
+    index: false
+    encoding: latin-1
+
+intermediate_covid_2021:
+  type: pandas.CSVDataset
+  filepath: data/02_intermediate/covid_2021_clean.csv
+  load_args:
+    encoding: latin-1
+    parse_dates: ['date']
+  save_args:
+    index: false
+    encoding: latin-1
+
+intermediate_covid_2022:
+  type: pandas.CSVDataset
+  filepath: data/02_intermediate/covid_2022_clean.csv
+  load_args:
+    encoding: latin-1
+    parse_dates: ['date']
+  save_args:
+    index: false
+    encoding: latin-1
+
+# =====================================================
+# PRIMARY DATA - Datos limpios integrados (03_primary)
+# =====================================================
+
+primary_covid_complete:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/covid_chile_complete.csv
+  load_args:
+    parse_dates: ['date']
+
+primary_covid_national:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/covid_chile_national_daily.csv
+  load_args:
+    parse_dates: ['date']
+
+# =====================================================
+# FEATURE DATA - Features para modelado (04_feature)
+# =====================================================
+
+feature_covid_time_series:
+  type: pandas.CSVDataset
+  filepath: data/04_feature/covid_features_timeseries.csv
+
+feature_covid_regional:
+  type: pandas.CSVDataset
+  filepath: data/04_feature/covid_features_regional.csv
+
+# =====================================================
+# MODEL INPUT - Datos listos para ML (05_model_input)
+# =====================================================
+
+model_input_regression:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/covid_regression_data.csv
+
+model_input_classification:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/covid_classification_data.csv
+
+# =====================================================
+# MODELS - Modelos y análisis (06_models)
+# =====================================================
+
+temporal_analysis_results:
+  type: pickle.PickleDataset
+  filepath: data/06_models/temporal_analysis.pkl
+  versioned: true
+
+regional_analysis_results:
+  type: pickle.PickleDataset
+  filepath: data/06_models/regional_analysis.pkl
+  versioned: true
+
+feature_importance_analysis:
+  type: pickle.PickleDataset
+  filepath: data/06_models/feature_importance_analysis.pkl
+  versioned: true
+
+# =====================================================
+# MODEL OUTPUT - Resultados y métricas (07_model_output)
+# =====================================================
+
+covid_key_metrics:
+  type: json.JSONDataset
+  filepath: data/07_model_output/covid_key_metrics.json
+  versioned: true
+
+data_validation_report:
+  type: json.JSONDataset
+  filepath: data/07_model_output/data_validation_report.json
+
+data_quality_report:
+  type: json.JSONDataset
+  filepath: data/07_model_output/data_quality_report.json
+
+# =====================================================
+# REPORTING - Reportes finales (08_reporting)
+# =====================================================
+
+final_report:
+  type: json.JSONDataset
+  filepath: data/08_reporting/final_covid_report.json
+  versioned: true
+
+# Visualizaciones
+covid_temporal_evolution_plot:
+  type: plotly.JSONDataset
+  filepath: data/08_reporting/covid_temporal_evolution.json
+  versioned: true
+
+covid_regional_heatmap:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/covid_regional_heatmap.png
+  versioned: true
+
+covid_peak_analysis_plot:
+  type: plotly.JSONDataset
+  filepath: data/08_reporting/covid_peak_analysis.json
+  versioned: true
+
+# =====================================================
+# DATOS ORIGINALES DE SPACEFLIGHTS (mantenidos como referencia)
+# =====================================================
+
+# Datasets originales del tutorial de Kedro (comentados para no interferir)
+# companies:
+#   type: pandas.CSVDataset
+#   filepath: data/01_raw/companies.csv
+
+# reviews:
+#   type: pandas.CSVDataset
+#   filepath: data/01_raw/reviews.csv
+
+# shuttles:
+#   type: pandas.ExcelDataset
+#   filepath: data/01_raw/shuttles.xlsx
+#   load_args:
+#     engine: openpyxl
+
+# preprocessed_companies:
+#   type: pandas.ParquetDataset
+#   filepath: data/02_intermediate/preprocessed_companies.parquet
+
+# preprocessed_shuttles:
+#   type: pandas.ParquetDataset
+#   filepath: data/02_intermediate/preprocessed_shuttles.parquet
+
+# model_input_table:
+#   type: pandas.ParquetDataset
+#   filepath: data/03_primary/model_input_table.parquet
+
+# regressor:
+#   type: pickle.PickleDataset
+#   filepath: data/06_models/regressor.pickle
+#   versioned: true
+
+# shuttle_passenger_capacity_plot_exp:
+#   type: plotly.PlotlyDataset
+#   filepath: data/08_reporting/shuttle_passenger_capacity_plot_exp.json
+#   versioned: true
+#   plotly_args:
+#     type: bar
+#     fig:
+#       x: shuttle_type
+#       y: passenger_capacity
+#       orientation: h
+#     layout:
+#       xaxis_title: Shuttles
+#       yaxis_title: Average passenger capacity
+#       title: Shuttle Passenger capacity
+
+# shuttle_passenger_capacity_plot_go:
+#   type: plotly.JSONDataset
+#   filepath: data/08_reporting/shuttle_passenger_capacity_plot_go.json
+#   versioned: true
+
+# dummy_confusion_matrix:
+#   type: matplotlib.MatplotlibWriter
+#   filepath: data/08_reporting/dummy_confusion_matrix.png
+#   versioned: true
