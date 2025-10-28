@@ -1,0 +1,5 @@
+outs:
+- md5: 0cb2aa70c57b8533a0f344c36a4d84a9
+  size: 11799095
+  hash: md5
+  path: trained_regression_models.pkl

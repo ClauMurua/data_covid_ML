@@ -1,0 +1,5 @@
+outs:
+- md5: 08f83c027b0219a72cb48685f2997841
+  size: 134183
+  hash: md5
+  path: covid_chile_national_daily.csv
