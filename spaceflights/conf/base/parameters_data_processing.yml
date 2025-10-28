@@ -1,0 +1,66 @@
+# =====================================================
+# PARÁMETROS - DATA PROCESSING PIPELINE
+# Feature Engineering y Preparación de Datos
+# =====================================================
+
+# Feature Engineering - Variables Temporales
+basic_lags: [1, 3, 7, 14]
+rolling_windows: [7, 14, 30]
+
+feature_engineering:
+  # Lags temporales avanzados
+  lag_days: [1, 3, 7, 14, 21]
+  
+  # Ventanas para rolling statistics
+  rolling_windows: [3, 7, 14, 30]
+  
+  # Estacionalidad
+  seasonal_components: ["month_sin", "month_cos", "day_of_week_sin", "day_of_week_cos"]
+  
+  # Transformaciones
+  apply_log_transform: true
+  apply_standard_scaling: true
+  apply_minmax_scaling: true
+  
+  # Población por región (para tasas per cápita)
+  population_data:
+    default_population: 19116201  # Población Chile total
+    regional_populations:
+      "CL": 19116201
+      "CL_RM": 7112808  # Región Metropolitana
+      "CL_BB": 2124123  # Biobío
+      "CL_VS": 1815902  # Valparaíso
+
+# Transformaciones de Datos
+transformations:
+  robust_scaler:
+    enabled: true
+    with_centering: true
+    with_scaling: true
+    quantile_range: [0.25, 0.75]
+  
+  minmax_scaler:
+    enabled: true
+    feature_range: [0, 1]
+    
+  log_transform:
+    enabled: true
+    offset: 1  # Para log1p
+
+# Targets de Machine Learning (NOMBRE CORRECTO)
+ml_targets:
+  prediction_horizon: 7  # Días para predicción
+  high_transmission_quantile: 0.75
+  
+  thresholds:
+    low_risk: 0.33
+    medium_risk: 0.66
+    high_risk: 0.90
+
+# Preparación para ML (AGREGADO)
+ml_preparation:
+  sample_size: 60000
+  remove_outliers: true
+  outlier_method: "iqr"
+  outlier_threshold: 3.0
+  split_method: "temporal"

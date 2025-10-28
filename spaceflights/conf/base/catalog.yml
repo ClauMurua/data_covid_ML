@@ -95,135 +95,93 @@ feature_covid_regional:
   filepath: data/04_feature/covid_features_regional.csv
 
 # =====================================================
-# MODEL INPUT - Datos listos para ML (05_model_input)
+# CAPA 05: MODEL INPUT - Datasets listos para ML
 # =====================================================
 
-model_input_regression:
+regression_dataset:
   type: pandas.CSVDataset
-  filepath: data/05_model_input/covid_regression_data.csv
+  filepath: data/05_model_input/regression_dataset.csv
+  save_args:
+    index: False
 
-model_input_classification:
+classification_dataset:
   type: pandas.CSVDataset
-  filepath: data/05_model_input/covid_classification_data.csv
+  filepath: data/05_model_input/classification_dataset.csv
+  save_args:
+    index: False
 
 # =====================================================
-# MODELS - Modelos y análisis (06_models)
+# CAPA 05: MODEL INPUT - Splits de datos
 # =====================================================
 
-temporal_analysis_results:
+regression_splits:
   type: pickle.PickleDataset
-  filepath: data/06_models/temporal_analysis.pkl
-  versioned: true
+  filepath: data/05_model_input/regression_splits.pkl
 
-regional_analysis_results:
+classification_splits:
   type: pickle.PickleDataset
-  filepath: data/06_models/regional_analysis.pkl
-  versioned: true
+  filepath: data/05_model_input/classification_splits.pkl
+
+# =====================================================
+# CAPA 06: MODELS - Modelos entrenados
+# =====================================================
+
+trained_regression_models:
+  type: pickle.PickleDataset
+  filepath: data/06_models/trained_regression_models.pkl
+
+trained_classification_models:
+  type: pickle.PickleDataset
+  filepath: data/06_models/trained_classification_models.pkl
+
+# =====================================================
+# CAPA 07: MODEL OUTPUT - Resultados y métricas
+# =====================================================
+
+regression_metrics:
+  type: json.JSONDataset
+  filepath: data/07_model_output/regression_metrics.json
+
+classification_metrics:
+  type: json.JSONDataset
+  filepath: data/07_model_output/classification_metrics.json
+
+best_models_report:
+  type: json.JSONDataset
+  filepath: data/07_model_output/best_models_report.json
 
 feature_importance_analysis:
+  type: json.JSONDataset
+  filepath: data/07_model_output/feature_importance_analysis.json
+
+# =====================================================
+# CAPA 08: REPORTING - Outputs para reporting
+# =====================================================
+
+regression_results:
+  type: json.JSONDataset
+  filepath: data/08_reporting/regression_results.json
+
+classification_results:
+  type: json.JSONDataset
+  filepath: data/08_reporting/classification_results.json
+
+combined_covid_regional:
+  type: MemoryDataset
+
+# =====================================================
+# HYPERPARAMETER TUNING OUTPUTS
+# =====================================================
+
+tuned_regression_results:
   type: pickle.PickleDataset
-  filepath: data/06_models/feature_importance_analysis.pkl
-  versioned: true
+  filepath: data/06_models/tuned_regression_results.pkl
 
-# =====================================================
-# MODEL OUTPUT - Resultados y métricas (07_model_output)
-# =====================================================
+tuned_classification_results:
+  type: pickle.PickleDataset
+  filepath: data/06_models/tuned_classification_results.pkl
 
-covid_key_metrics:
+# Resultados de tuning en JSON para análisis
+tuning_summary:
   type: json.JSONDataset
-  filepath: data/07_model_output/covid_key_metrics.json
-  versioned: true
-
-data_validation_report:
-  type: json.JSONDataset
-  filepath: data/07_model_output/data_validation_report.json
-
-data_quality_report:
-  type: json.JSONDataset
-  filepath: data/07_model_output/data_quality_report.json
-
-# =====================================================
-# REPORTING - Reportes finales (08_reporting)
-# =====================================================
-
-final_report:
-  type: json.JSONDataset
-  filepath: data/08_reporting/final_covid_report.json
-  versioned: true
-
-# Visualizaciones
-covid_temporal_evolution_plot:
-  type: plotly.JSONDataset
-  filepath: data/08_reporting/covid_temporal_evolution.json
-  versioned: true
-
-covid_regional_heatmap:
-  type: matplotlib.MatplotlibWriter
-  filepath: data/08_reporting/covid_regional_heatmap.png
-  versioned: true
-
-covid_peak_analysis_plot:
-  type: plotly.JSONDataset
-  filepath: data/08_reporting/covid_peak_analysis.json
-  versioned: true
-
-# =====================================================
-# DATOS ORIGINALES DE SPACEFLIGHTS (mantenidos como referencia)
-# =====================================================
-
-# Datasets originales del tutorial de Kedro (comentados para no interferir)
-# companies:
-#   type: pandas.CSVDataset
-#   filepath: data/01_raw/companies.csv
-
-# reviews:
-#   type: pandas.CSVDataset
-#   filepath: data/01_raw/reviews.csv
-
-# shuttles:
-#   type: pandas.ExcelDataset
-#   filepath: data/01_raw/shuttles.xlsx
-#   load_args:
-#     engine: openpyxl
-
-# preprocessed_companies:
-#   type: pandas.ParquetDataset
-#   filepath: data/02_intermediate/preprocessed_companies.parquet
-
-# preprocessed_shuttles:
-#   type: pandas.ParquetDataset
-#   filepath: data/02_intermediate/preprocessed_shuttles.parquet
-
-# model_input_table:
-#   type: pandas.ParquetDataset
-#   filepath: data/03_primary/model_input_table.parquet
-
-# regressor:
-#   type: pickle.PickleDataset
-#   filepath: data/06_models/regressor.pickle
-#   versioned: true
-
-# shuttle_passenger_capacity_plot_exp:
-#   type: plotly.PlotlyDataset
-#   filepath: data/08_reporting/shuttle_passenger_capacity_plot_exp.json
-#   versioned: true
-#   plotly_args:
-#     type: bar
-#     fig:
-#       x: shuttle_type
-#       y: passenger_capacity
-#       orientation: h
-#     layout:
-#       xaxis_title: Shuttles
-#       yaxis_title: Average passenger capacity
-#       title: Shuttle Passenger capacity
-
-# shuttle_passenger_capacity_plot_go:
-#   type: plotly.JSONDataset
-#   filepath: data/08_reporting/shuttle_passenger_capacity_plot_go.json
-#   versioned: true
-
-# dummy_confusion_matrix:
-#   type: matplotlib.MatplotlibWriter
-#   filepath: data/08_reporting/dummy_confusion_matrix.png
-#   versioned: true
+  filepath: data/08_reporting/tuning_summary.json

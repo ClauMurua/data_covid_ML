@@ -1,0 +1,28 @@
+stages:
+  data_processing:
+    cmd: kedro run --pipeline=data_processing
+    deps:
+      - data/01_raw/chile_completo_covid_2020.csv
+      - data/01_raw/chile_completo_covid_2021.csv
+      - data/01_raw/chile_completo_covid_2022.csv
+      - src/spaceflights/pipelines/data_processing/
+    outs:
+      - data/03_primary/covid_chile_complete.csv
+      - data/03_primary/covid_chile_national_daily.csv
+      - data/03_primary/model_input_table.parquet
+    
+  data_science:
+    cmd: kedro run --pipeline=data_science
+    deps:
+      - data/03_primary/model_input_table.parquet
+      - src/spaceflights/pipelines/data_science/
+    outs:
+      - data/06_models/trained_regression_models.pkl
+      - data/06_models/trained_classification_models.pkl
+      - data/06_models/tuned_regression_results.pkl
+      - data/06_models/tuned_classification_results.pkl
+    metrics:
+      - data/08_reporting/regression_metrics.json
+      - data/08_reporting/classification_metrics.json
+    plots:
+      - data/08_reporting/feature_importance_analysis.json

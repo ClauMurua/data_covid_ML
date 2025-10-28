@@ -1,12 +1,104 @@
-model_options:
+# =====================================================
+# PARÁMETROS - DATA SCIENCE PIPELINE
+# Modelado y Evaluación de Machine Learning
+# =====================================================
+
+# División de Datos
+modeling:
   test_size: 0.2
-  random_state: 3
-  features:
-    - engines
-    - passenger_capacity
-    - crew
-    - d_check_complete
-    - moon_clearance_complete
-    - iata_approved
-    - company_rating
-    - review_scores_rating
+  val_size: 0.15
+  random_state: 42
+  temporal_split: true  # Split temporal para series de tiempo
+
+# Modelos de Regresión
+regression_models:
+  linear_regression:
+    enabled: true
+    
+  ridge_regression:
+    enabled: true
+    ridge_alpha: 1.0
+    alphas_to_test: [0.1, 1.0, 10.0, 100.0]
+    
+  lasso_regression:
+    enabled: true
+    lasso_alpha: 1.0
+    alphas_to_test: [0.001, 0.01, 0.1, 1.0]
+    
+  random_forest:
+    enabled: true
+    rf_n_estimators: 100
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+    n_jobs: -1
+    
+  gradient_boosting:
+    enabled: true
+    gb_n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 5
+    subsample: 0.8
+  
+  xgboost:
+    enabled: true
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    gamma: 0
+    min_child_weight: 1
+
+# Modelos de Clasificación
+classification_models:
+  logistic_regression:
+    enabled: true
+    max_iter: 1000
+    solver: 'lbfgs'
+    
+  random_forest:
+    enabled: true
+    rf_n_estimators: 100
+    max_depth: 10
+    min_samples_split: 5
+    class_weight: 'balanced'
+    
+  gradient_boosting:
+    enabled: true
+    gb_n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 5
+    
+  svm:
+    enabled: true
+    svm_kernel: 'rbf'
+    C: 1.0
+    gamma: 'scale'
+
+# Selección de Modelos
+model_selection:
+  regression_metric: 'r2'  # r2, rmse, mae
+  classification_metric: 'f1'  # f1, accuracy, precision
+  cross_validation_folds: 5
+  
+  # Criterios de éxito (de la rúbrica)
+  success_criteria:
+    regression:
+      min_r2: 0.85
+      max_rmse: 500
+    classification:
+      min_f1: 0.80
+      min_precision: 0.85
+
+# Feature Importance
+feature_importance:
+  top_n_features: 20
+  method: 'shap'  # shap, permutation, builtin
+  
+# Hiperparámetros para Grid Search
+hyperparameter_tuning:
+  enabled: false  # Cambiar a true para tuning completo
+  cv_folds: 3
+  n_jobs: -1
+  verbose: 1

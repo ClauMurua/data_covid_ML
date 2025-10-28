@@ -1,24 +1,37 @@
 from kedro.pipeline import Pipeline, node
 
+# Importar funciones desde nodes.py
+from .nodes import (
+    combine_all_years,
+    create_temporal_features,
+    create_epidemiological_features,
+    create_regional_features,
+    apply_transformations,
+    identify_ml_targets,
+    prepare_ml_datasets
+)
+
 def create_pipeline(**kwargs) -> Pipeline:
     """
     Pipeline de procesamiento de datos COVID-19
     Feature Engineering y preparación para ML
+    
+    MEJORADO: Usa TODOS los 99,193 registros (363 ubicaciones)
     """
     return Pipeline([
-        # Feature Engineering Temporal
+        # NUEVO: Combinar todos los años primero
         node(
-            func=create_temporal_features,
-            inputs=["primary_covid_national", "params:feature_engineering"],
-            outputs="feature_temporal_data",
-            name="create_temporal_features",
-            tags=["feature_engineering", "temporal"]
+            func=combine_all_years,
+            inputs=["raw_covid_2020", "raw_covid_2021", "raw_covid_2022"],
+            outputs="combined_covid_regional",  # ← CAMBIO AQUÍ
+            name="combine_all_years",
+            tags=["data_preparation"]
         ),
         
         # Feature Engineering Epidemiológico
         node(
             func=create_epidemiological_features,
-            inputs=["primary_covid_complete", "params:feature_engineering"],
+            inputs=["combined_covid_regional", "params:feature_engineering"],  # ← CAMBIO AQUÍ
             outputs="feature_epidemiological_data",
             name="create_epidemiological_features",
             tags=["feature_engineering", "epidemiological"]
@@ -27,10 +40,19 @@ def create_pipeline(**kwargs) -> Pipeline:
         # Features Regionales
         node(
             func=create_regional_features,
-            inputs=["primary_covid_complete", "params:feature_engineering"],
+            inputs=["combined_covid_regional", "params:feature_engineering"],  # ← CAMBIO AQUÍ
             outputs="feature_regional_data",
             name="create_regional_features",
             tags=["feature_engineering", "regional"]
+        ),
+        
+        # Feature Engineering Temporal POR UBICACIÓN
+        node(
+            func=create_temporal_features,
+            inputs=["combined_covid_regional", "params:feature_engineering"],  # ← CAMBIO AQUÍ
+            outputs="feature_temporal_data",
+            name="create_temporal_features",
+            tags=["feature_engineering", "temporal"]
         ),
         
         # Transformaciones de datos
@@ -60,13 +82,3 @@ def create_pipeline(**kwargs) -> Pipeline:
             tags=["ml_preparation", "final_datasets"]
         )
     ])
-
-# Importar funciones desde nodes.py
-from .nodes import (
-    create_temporal_features,
-    create_epidemiological_features,
-    create_regional_features,
-    apply_transformations,
-    identify_ml_targets,
-    prepare_ml_datasets
-)

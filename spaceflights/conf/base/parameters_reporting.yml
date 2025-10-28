@@ -1,0 +1,100 @@
+# =====================================================
+# PARÁMETROS - REPORTING PIPELINE
+# Visualizaciones y Reportes COVID-19
+# =====================================================
+
+# Configuración de Reportes
+reporting:
+  output_format: ["html", "png"]
+  dpi: 300
+  figure_size: [16, 10]
+  style: 'seaborn-v0_8-darkgrid'
+  color_palette: 'husl'
+
+# Visualizaciones de Series Temporales
+temporal_visualizations:
+  # Gráficos principales
+  plot_types: ["line", "area", "bar"]
+  
+  # Medias móviles a mostrar
+  rolling_windows: [7, 14, 30]
+  
+  # Eventos importantes a marcar
+  key_events:
+    "2020-03-18": "Primera cuarentena nacional"
+    "2020-06-15": "Primera ola - pico"
+    "2021-02-03": "Inicio vacunación masiva"
+    "2021-04-01": "Segunda ola"
+    "2022-01-15": "Ola Ómicron"
+    "2022-07-01": "Levantamiento restricciones"
+  
+  # Colores para diferentes métricas
+  colors:
+    confirmed: "#3498db"
+    deceased: "#e74c3c"
+    recovered: "#2ecc71"
+    active: "#f39c12"
+
+# Visualizaciones Regionales
+regional_visualizations:
+  top_regions: 15
+  map_projection: 'mercator'
+  
+  # Categorías de riesgo
+  risk_colors:
+    bajo: "#2ecc71"
+    medio: "#f39c12"
+    alto: "#e67e22"
+    critico: "#e74c3c"
+
+# Métricas de Performance de Modelos
+model_performance:
+  # Métricas a incluir en reportes
+  regression_metrics: ["rmse", "mae", "r2", "mape"]
+  classification_metrics: ["accuracy", "precision", "recall", "f1"]
+  
+  # Visualizaciones de modelos
+  plot_types: ["confusion_matrix", "roc_curve", "feature_importance", "prediction_vs_actual"]
+  
+  # Top features a mostrar
+  top_features: 20
+
+# Dashboard Interactivo
+dashboard:
+  enabled: true
+  port: 8050
+  debug: false
+  
+  # Componentes del dashboard
+  components:
+    - "overview_nacional"
+    - "analisis_regional"
+    - "predicciones_ml"
+    - "comparacion_modelos"
+
+# Reporte Ejecutivo
+executive_report:
+  sections:
+    - "resumen_ejecutivo"
+    - "evolucion_temporal"
+    - "analisis_regional"
+    - "modelos_predictivos"
+    - "recomendaciones"
+  
+  # KPIs principales
+  kpis:
+    - "casos_totales"
+    - "tasa_letalidad"
+    - "casos_activos"
+    - "tendencia_semanal"
+    - "prediccion_7_dias"
+
+# Comparaciones Temporales
+comparisons:
+  # Períodos a comparar
+  periods:
+    pre_vacunacion: ["2020-03-01", "2021-02-02"]
+    post_vacunacion: ["2021-02-03", "2022-12-31"]
+  
+  # Métricas de comparación
+  metrics: ["media_casos", "media_muertes", "tasa_letalidad", "tasa_crecimiento"]
