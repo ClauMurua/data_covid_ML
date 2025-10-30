@@ -56,6 +56,8 @@ Prerrequisitos
 
 Python 3.8 o superior
 Git para control de versiones
+*   **Docker Desktop (con WSL 2):** Esencial para el despliegue con Airflow. Asegúrate de que esté configurado para usar el backend de WSL 2.
+*   **Configuración de Memoria de WSL 2:** Si usas WSL 2, es crucial aumentar la memoria asignada para Docker. Edita el archivo `.wslconfig` en `C:\Users\<TuNombreDeUsuario>\` y configura `memory` a `8GB` o más (e.g., `memory=8GB`). Después de guardar, ejecuta `wsl --shutdown` en PowerShell (admin) y reinicia Docker Desktop.
 8GB RAM recomendado para procesamiento
 2GB espacio libre en disco
 
@@ -96,7 +98,49 @@ kedro jupyter notebook
 
 # Visualización de pipelines
 kedro viz
-Notebooks Disponibles
+
+## Despliegue con Airflow (MLOps)
+
+Para orquestar y programar los pipelines de Kedro, este proyecto utiliza Apache Airflow, ejecutado con Docker Compose. Esto permite un despliegue y monitoreo robusto de todo el flujo de trabajo de ML.
+
+### Prerrequisitos Específicos para Airflow/Docker
+
+*   **Docker Desktop (con WSL 2):** Asegúrate de tener Docker Desktop instalado y configurado para usar el backend de WSL 2 en Windows.
+*   **Configuración de Memoria de WSL 2:** Es crucial que asignes suficiente memoria a WSL 2 para evitar errores de "Memoria Agotada" durante la ejecución de los pipelines. Edita (o crea) el archivo `.wslconfig` en `C:\Users\<TuNombreDeUsuario>\` y añade:
+
+```ini
+[wsl2]
+memory=8GB   ; Asigna al menos 8GB de RAM a WSL 2
+processors=4 ; Ajusta al número de núcleos de CPU que desees
+```
+
+    Después de guardar el archivo, apaga WSL con `wsl --shutdown` en PowerShell (como administrador) y reinicia Docker Desktop.
+
+### Levantar el Entorno de Airflow
+
+Desde el directorio `spaceflights` del proyecto, puedes levantar todos los servicios de Airflow (webserver, scheduler, postgres) usando Docker Compose:
+
+```bash
+cd spaceflights
+docker-compose -f docker-compose.airflow.yml up --build -d
+```
+
+*   El flag `--build` es importante para reconstruir las imágenes de Docker y asegurar que todas las dependencias (`kedro-datasets[pandas-csvdataset]`, `fastapi`, etc.) estén instaladas dentro de los contenedores de Airflow.
+*   El flag `-d` ejecuta los servicios en segundo plano.
+
+Una vez que los servicios estén levantados, podrás acceder a la interfaz de usuario de Airflow en `http://localhost:8080` (usuario: `admin`, contraseña: `admin`).
+
+### Ejecutar el Pipeline de Kedro en Airflow
+
+El DAG de Airflow (`covid_ml_dag.py`) está configurado para ejecutar los pipelines de Kedro en secuencia. Para ejecutar el DAG:
+
+1.  Abre la interfaz de usuario de Airflow en `http://localhost:8080`.
+2.  Busca el DAG llamado `covid_ml_pipeline`.
+3.  Activa el DAG (si no está activo) y luego, desde la vista de lista o la vista gráfica, puedes disparar una ejecución manual.
+
+Los pipelines de Kedro se ejecutarán con los nombres `dp` (data processing), `ds` (data science) y `rp` (reporting) tal como están definidos en `pipeline_registry.py`.
+
+## Notebooks Disponibles
 
 01_business_understanding.ipynb - Comprensión del negocio
 02_data_understanding.ipynb - Análisis exploratorio
@@ -154,6 +198,8 @@ Label encoding para variables categóricas
 
 Estructura del Proyecto
 data_covid_ML/
+├── airflow/
+├── dags/
 ├── conf/
 │   ├── base/
 │   │   ├── catalog.yml
@@ -200,12 +246,14 @@ Feature importance analizada
 Dependencias del Sistema
 Librerías Principales
 kedro>=0.18.0
+kedro-datasets>=3.0.0
 pandas>=1.3.0
 numpy>=1.21.0
 scikit-learn>=1.0.0
 matplotlib>=3.4.0
 seaborn>=0.11.0
 plotly>=5.0.0
+fastapi>=0.100.0
 jupyter>=1.0.0
 Consideraciones Técnicas
 Reproducibilidad
