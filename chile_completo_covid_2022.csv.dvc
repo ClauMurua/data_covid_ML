@@ -1,0 +1,5 @@
+outs:
+- md5: 0e614dc571305017864ccb7d2dbb995d
+  size: 1633348
+  hash: md5
+  path: chile_completo_covid_2022.csv

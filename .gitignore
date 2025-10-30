@@ -86,3 +86,10 @@ venv.bak/
 ##########################
 /dvc.lock
 .dvc_storage
+
+airflow/logs/
+spaceflights/airflow/logs/
+*.log
+/chile_completo_covid_2020.csv
+/chile_completo_covid_2021.csv
+/chile_completo_covid_2022.csv
