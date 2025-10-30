@@ -162,3 +162,6 @@ venv.bak/
 
 # mlflow local runs
 mlruns/*
+airflow/logs/
+spaceflights/airflow/logs/
+*.log

@@ -76,11 +76,13 @@ primary_covid_complete:
   load_args:
     parse_dates: ['date']
 
-primary_covid_national:
-  type: pandas.CSVDataset
-  filepath: data/03_primary/covid_chile_national_daily.csv
-  load_args:
-    parse_dates: ['date']
+# primary_covid_national:
+#   type: pandas.CSVDataset
+#   filepath: data/03_primary/covid_chile_national_daily.csv
+#   load_args:
+#     parse_dates: ['date']
+#   save_args:
+#     index: false
 
 # =====================================================
 # FEATURE DATA - Features para modelado (04_feature)

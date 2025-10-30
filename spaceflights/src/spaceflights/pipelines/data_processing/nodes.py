@@ -1,4 +1,3 @@
-from fastapi import params
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Tuple
@@ -694,111 +693,67 @@ def identify_ml_targets(df: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFram
     return df_targets
 
 def prepare_ml_datasets(
-    df: pd.DataFrame, 
-    df_targets: pd.DataFrame, 
+    features: pd.DataFrame,
+    targets: pd.DataFrame,
     params: Dict[str, Any]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepara datasets usando MUESTREO ESTRATIFICADO por región.
-    
-    OPTIMIZADO: Toma muestra representativa (~30-50K registros) en vez de:
-    - Usar todo (5.4M - no cabe en RAM)
-    - Agregar todo (1K - pierde variabilidad)
-    
-    Sampling estratificado = toma proporción igual de cada región.
+    Prepara datasets ML - OPTIMIZADO PARA MEMORIA
     """
-    logger.info("Preparando datasets finales para ML con sampling estratificado")
+    logger.info("Preparando datasets ML (optimizado para memoria)")
     
-    # Combinar features y targets POR UBICACIÓN Y FECHA
-    target_columns = [col for col in df_targets.columns if col.startswith('target_')]
-    merge_keys = ['location_key', 'date']
+    merge_keys = params.get('merge_keys', ['location_key', 'date'])
     
-    logger.info(f"Haciendo merge con keys: {merge_keys}")
-    logger.info(f"Features shape: {df.shape}, Targets shape: {df_targets.shape}")
+    # CRÍTICO: Muestrear ANTES del merge
+    max_before_merge = 1000
     
-    df_ml = df.merge(
-        df_targets[merge_keys + target_columns], 
-        on=merge_keys, 
-        how='inner'
-    )
+    if len(features) > max_before_merge:
+        features = features.sample(n=max_before_merge, random_state=42)
+        logger.info(f"✅ Features pre-merge: {max_before_merge}")
     
-    logger.info(f"✅ Merge completado: {len(df_ml):,} registros")
+    if len(targets) > max_before_merge:
+        targets = targets.sample(n=max_before_merge, random_state=42)
+        logger.info(f"✅ Targets pre-merge: {max_before_merge}")
     
-    # SAMPLING ESTRATIFICADO: tomar muestra proporcional de cada región
-    sample_size = params.get("sample_size", 30000)  # Puedes ajustar en YAML
+    # Merge con datos ya reducidos
+    df_merged = features.merge(targets, on=merge_keys, how='inner')
+    logger.info(f"✅ Merge: {df_merged.shape}")
     
-    # Calcular cuántos registros por región
-    n_locations = df_ml['location_key'].nunique()
-    samples_per_location = sample_size // n_locations
+    # Si aún es muy grande después del merge, reducir más
+    if len(df_merged) > 2000:
+        df_merged = df_merged.sample(n=2000, random_state=42)
+        logger.info(f"✅ Post-merge sample: {df_merged.shape}")
     
-    logger.info(f"🎲 Aplicando sampling estratificado:")
-    logger.info(f"   • Muestra objetivo: {sample_size:,} registros")
-    logger.info(f"   • Ubicaciones: {n_locations}")
-    logger.info(f"   • ~{samples_per_location} registros por ubicación")
+    # Targets
+    reg_targets = ['target_change_pct_7d']
+    cls_targets = ['target_high_transmission']
     
-    # Tomar muestra de cada ubicación
-    df_sampled = df_ml.groupby('location_key', group_keys=False).apply(
-        lambda x: x.sample(n=min(len(x), samples_per_location), random_state=42)
-    ).reset_index(drop=True)
+    # Verificar que existan
+    reg_targets = [t for t in reg_targets if t in df_merged.columns]
+    cls_targets = [t for t in cls_targets if t in df_merged.columns]
     
-    logger.info(f"✅ Muestra creada: {len(df_sampled):,} registros")
-    logger.info(f"   • Reducción: {len(df_ml):,} → {len(df_sampled):,} ({len(df_sampled)/len(df_ml)*100:.1f}%)")
+    # Para regresión: mantener solo filas con target válido
+    df_reg = df_merged.copy()
+    if reg_targets:
+        df_reg = df_reg[df_reg[reg_targets].notna().any(axis=1)]
     
-    # Identificar targets de regresión vs clasificación
-    regression_targets = []
-    classification_targets = []
+    # Para clasificación: mantener solo filas con target válido
+    df_cls = df_merged.copy()
+    if cls_targets:
+        df_cls = df_cls[df_cls[cls_targets].notna().any(axis=1)]
     
-    for col in target_columns:
-        unique_values = df_sampled[col].dropna().nunique()
-        if unique_values <= 10 and df_sampled[col].dtype in ['int64', 'int32', 'float64']:
-            classification_targets.append(col)
-        else:
-            regression_targets.append(col)
-    
-    logger.info(f"   • Targets de regresión: {regression_targets}")
-    logger.info(f"   • Targets de clasificación: {classification_targets}")
+    logger.info(f"✅ Regresión limpia: {df_reg.shape}")
+    logger.info(f"✅ Clasificación limpia: {df_cls.shape}")
     
     # Features
-    feature_columns = [
-        col for col in df_sampled.columns 
-        if not col.startswith('target_') and col not in ['date', 'location_key']
-    ]
+    feature_cols = [c for c in df_reg.columns 
+                   if c not in reg_targets + cls_targets + merge_keys]
     
-    # Dataset para regresión
-    if regression_targets:
-        regression_dataset = df_sampled[feature_columns + regression_targets + ['date', 'location_key']].copy()
-        regression_dataset = regression_dataset.dropna(subset=regression_targets, how='all')
-        
-        logger.info(f"📊 Dataset regresión: {regression_dataset.shape}")
-        logger.info(f"   • Features: {len(feature_columns)}")
-        logger.info(f"   • Targets: {regression_targets}")
-        
-        for target in regression_targets:
-            valid = regression_dataset[target].notna().sum()
-            logger.info(f"   • {target}: {valid} valores válidos")
-    else:
-        regression_dataset = pd.DataFrame()
+    # Crear datasets finales
+    regression_dataset = df_reg[merge_keys + feature_cols + reg_targets].copy()
+    classification_dataset = df_cls[merge_keys + feature_cols + cls_targets].copy()
     
-    # Dataset para clasificación
-    if classification_targets:
-        classification_dataset = df_sampled[feature_columns + classification_targets + ['date', 'location_key']].copy()
-        classification_dataset = classification_dataset.dropna(subset=classification_targets, how='all')
-    
-        # Rellenar NaN y convertir a int
-        for col in classification_targets:
-            # Rellenar NaN con el valor más frecuente (moda)
-            mode_value = classification_dataset[col].mode()
-            fill_value = mode_value[0] if len(mode_value) > 0 else 0
-            classification_dataset[col] = classification_dataset[col].fillna(fill_value).round().astype(int)
-        
-        logger.info(f"📊 Dataset clasificación: {classification_dataset.shape}")
-        logger.info(f"   • Features: {len(feature_columns)}")
-        logger.info(f"   • Targets: {classification_targets}")
-        
-        for target in classification_targets:
-            dist = classification_dataset[target].value_counts().to_dict()
-            logger.info(f"   • {target}: {dist}")
-    else:
-        classification_dataset = pd.DataFrame()
+    logger.info(f"✅ FINAL Regression: {regression_dataset.shape}")
+    logger.info(f"✅ FINAL Classification: {classification_dataset.shape}")
     
     return regression_dataset, classification_dataset

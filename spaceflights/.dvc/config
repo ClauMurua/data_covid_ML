@@ -1,4 +1,6 @@
 [core]
-    remote = local_storage
+    remote = local
 ['remote "local_storage"']
     url = ../.dvc_storage
+['remote "local"']
+    url = C:\Users\cmuru\OneDrive\Escritorio\datos_covid\dvc_storage

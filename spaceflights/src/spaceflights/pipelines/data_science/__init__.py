@@ -1,3 +1,7 @@
-"""Complete Data Science pipeline for the spaceflights tutorial"""
+"""
+Data science pipeline.
+"""
 
-from .pipeline import create_pipeline  # NOQA
+from .pipeline import create_pipeline
+
+__all__ = ["create_pipeline"]
