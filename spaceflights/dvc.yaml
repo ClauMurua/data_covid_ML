@@ -19,10 +19,26 @@ stages:
     outs:
       - data/06_models/trained_regression_models.pkl
       - data/06_models/trained_classification_models.pkl
-      - data/06_models/tuned_regression_results.pkl
-      - data/06_models/tuned_classification_results.pkl
     metrics:
-      - data/08_reporting/regression_metrics.json
-      - data/08_reporting/classification_metrics.json
-    plots:
-      - data/08_reporting/feature_importance_analysis.json
+      - data/07_model_output/regression_metrics.json:
+          cache: false
+      - data/07_model_output/classification_metrics.json:
+          cache: false
+      - data/07_model_output/best_models_report.json:
+          cache: false
+      - data/07_model_output/feature_importance_analysis.json:
+          cache: false
+  
+  reporting:
+    cmd: kedro run --pipeline=reporting
+    deps:
+      - data/07_model_output/regression_metrics.json
+      - data/07_model_output/classification_metrics.json
+      - data/07_model_output/best_models_report.json
+    outs:
+      - data/08_reporting/regression_comparison.png
+      - data/08_reporting/classification_comparison.png
+      - data/08_reporting/summary_dashboard.png
+    metrics:
+      - data/08_reporting/tuning_summary.json:
+          cache: false

@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso, LogisticRegress
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVR, SVC
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import (
     mean_squared_error, mean_absolute_error, r2_score,
     accuracy_score, precision_score, recall_score, f1_score,
@@ -651,6 +652,18 @@ def train_classification_models(
                 logger.debug(f"   ✓ SVM entrenado")
             except Exception as e:
                 logger.error(f"   ✗ Error en SVM: {e}")
+        
+        # 5. K-Neighbors Classifier (NUEVO)
+        if params.get("k_neighbors_classifier", {}).get("enabled", True):
+            try:
+                n_neighbors = params.get("k_neighbors_classifier", {}).get("n_neighbors", 5)
+                knn = KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1)
+                knn.fit(X_train, y_train)
+                target_models['k_neighbors_classifier'] = knn
+                total_models += 1
+                logger.debug(f"   ✓ K-Neighbors Classifier entrenado (n_neighbors={n_neighbors})")
+            except Exception as e:
+                logger.error(f"   ✗ Error en K-Neighbors Classifier: {e}")
         
         trained_models[target] = target_models
     
@@ -1423,8 +1436,54 @@ def tune_classification_models(
             except Exception as e:
                 logger.error(f"      ✗ Error en LR: {e}")
         
-        tuned_models[target] = target_models
-        tuning_results[target] = target_results
+        # 4. Random Forest
+        if params.get("random_forest", {}).get("enabled", True):
+            try:
+                rf = RandomForestClassifier(
+                    n_estimators=params.get("random_forest", {}).get("rf_n_estimators", 100),
+                    max_depth=params.get("random_forest", {}).get("max_depth", 10),
+                    min_samples_split=params.get("random_forest", {}).get("min_samples_split", 5),
+                    class_weight=params.get("random_forest", {}).get("class_weight", 'balanced'),
+                    n_jobs=-1,
+                    random_state=42
+                )
+                rf.fit(X_train, y_train)
+                target_models['random_forest'] = rf
+                total_models += 1
+                logger.debug(f"   ✓ Random Forest entrenado")
+            except Exception as e:
+                logger.error(f"   ✗ Error en Random Forest: {e}")
+        
+        # 5. SVM (opcional - deshabilitado por defecto)
+        if params.get("svm", {}).get("enabled", False):
+            try:
+                svm = SVC(
+                    kernel=params.get("svm", {}).get("svm_kernel", 'rbf'),
+                    C=params.get("svm", {}).get("C", 1.0),
+                    gamma=params.get("svm", {}).get("gamma", 'scale'),
+                    class_weight='balanced',
+                    random_state=42
+                )
+                svm.fit(X_train, y_train)
+                target_models['svm'] = svm
+                total_models += 1
+                logger.debug(f"   ✓ SVM entrenado")
+            except Exception as e:
+                logger.error(f"   ✗ Error en SVM: {e}")
+        
+        # 5. K-Neighbors Classifier (NUEVO)
+        if params.get("k_neighbors_classifier", {}).get("enabled", True):
+            try:
+                n_neighbors = params.get("k_neighbors_classifier", {}).get("n_neighbors", 5)
+                knn = KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1)
+                knn.fit(X_train, y_train)
+                target_models['k_neighbors_classifier'] = knn
+                total_models += 1
+                logger.debug(f"   ✓ K-Neighbors Classifier entrenado (n_neighbors={n_neighbors})")
+            except Exception as e:
+                logger.error(f"   ✗ Error en K-Neighbors Classifier: {e}")
+        
+        trained_models[target] = target_models
     
     logger.info(f"✅ GridSearchCV completado: {len(tuning_results)} targets tunados")
     

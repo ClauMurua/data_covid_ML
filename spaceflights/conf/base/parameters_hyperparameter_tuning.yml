@@ -59,3 +59,8 @@ gridsearch_config:
         C: [1.0, 10.0]
         solver: ['lbfgs']
         max_iter: [2000]
+    
+    k_neighbors_classifier:
+      enabled: true
+      param_grid:
+        n_neighbors: [3, 5, 7]
