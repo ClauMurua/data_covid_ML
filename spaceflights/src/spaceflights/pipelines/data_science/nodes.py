@@ -1331,8 +1331,10 @@ def tune_classification_models(
     cv_folds = params.get('cv_folds', 5)
     n_jobs = params.get('n_jobs', -1)
     
+    # ✅ INICIALIZAR TODAS LAS VARIABLES
     tuned_models = {}
     tuning_results = {}
+    total_models = 0  # ← AGREGADO
     
     for target in target_cols:
         logger.info(f"📌 Tuning para target: {target}")
@@ -1348,7 +1350,7 @@ def tune_classification_models(
         
         grids = params.get('classification_grids', {})
         
-        # Random Forest
+        # 1. Random Forest con GridSearch
         if grids.get('random_forest', {}).get('enabled', True):
             try:
                 logger.info("   🔧 GridSearch: Random Forest...")
@@ -1372,13 +1374,14 @@ def tune_classification_models(
                     'cv_std': float(grid_search.cv_results_['std_test_score'][grid_search.best_index_])
                 }
                 
+                total_models += 1
                 logger.info(f"      ✓ Best F1: {grid_search.best_score_:.3f} ± "
                            f"{grid_search.cv_results_['std_test_score'][grid_search.best_index_]:.3f}")
                 
             except Exception as e:
-                logger.error(f"      ✗ Error en RF: {e}")
+                logger.error(f"      ✗ Error en Random Forest: {e}")
         
-        # Gradient Boosting
+        # 2. Gradient Boosting con GridSearch
         if grids.get('gradient_boosting', {}).get('enabled', True):
             try:
                 logger.info("   🔧 GridSearch: Gradient Boosting...")
@@ -1402,12 +1405,13 @@ def tune_classification_models(
                     'cv_std': float(grid_search.cv_results_['std_test_score'][grid_search.best_index_])
                 }
                 
+                total_models += 1
                 logger.info(f"      ✓ Best F1: {grid_search.best_score_:.3f}")
                 
             except Exception as e:
-                logger.error(f"      ✗ Error en GB: {e}")
+                logger.error(f"      ✗ Error en Gradient Boosting: {e}")
         
-        # Logistic Regression
+        # 3. Logistic Regression con GridSearch
         if grids.get('logistic_regression', {}).get('enabled', True):
             try:
                 logger.info("   🔧 GridSearch: Logistic Regression...")
@@ -1431,32 +1435,16 @@ def tune_classification_models(
                     'cv_std': float(grid_search.cv_results_['std_test_score'][grid_search.best_index_])
                 }
                 
+                total_models += 1
                 logger.info(f"      ✓ Best F1: {grid_search.best_score_:.3f}")
                 
             except Exception as e:
-                logger.error(f"      ✗ Error en LR: {e}")
+                logger.error(f"      ✗ Error en Logistic Regression: {e}")
         
-        # 4. Random Forest
-        if params.get("random_forest", {}).get("enabled", True):
-            try:
-                rf = RandomForestClassifier(
-                    n_estimators=params.get("random_forest", {}).get("rf_n_estimators", 100),
-                    max_depth=params.get("random_forest", {}).get("max_depth", 10),
-                    min_samples_split=params.get("random_forest", {}).get("min_samples_split", 5),
-                    class_weight=params.get("random_forest", {}).get("class_weight", 'balanced'),
-                    n_jobs=-1,
-                    random_state=42
-                )
-                rf.fit(X_train, y_train)
-                target_models['random_forest'] = rf
-                total_models += 1
-                logger.debug(f"   ✓ Random Forest entrenado")
-            except Exception as e:
-                logger.error(f"   ✗ Error en Random Forest: {e}")
-        
-        # 5. SVM (opcional - deshabilitado por defecto)
+        # 4. SVM (opcional - deshabilitado por defecto)
         if params.get("svm", {}).get("enabled", False):
             try:
+                logger.info("   🔧 Training: SVM...")
                 svm = SVC(
                     kernel=params.get("svm", {}).get("svm_kernel", 'rbf'),
                     C=params.get("svm", {}).get("C", 1.0),
@@ -1467,118 +1455,30 @@ def tune_classification_models(
                 svm.fit(X_train, y_train)
                 target_models['svm'] = svm
                 total_models += 1
-                logger.debug(f"   ✓ SVM entrenado")
+                logger.debug(f"      ✓ SVM entrenado")
             except Exception as e:
-                logger.error(f"   ✗ Error en SVM: {e}")
+                logger.error(f"      ✗ Error en SVM: {e}")
         
-        # 5. K-Neighbors Classifier (NUEVO)
-        if params.get("k_neighbors_classifier", {}).get("enabled", True):
+        # 5. K-Neighbors Classifier (opcional)
+        if params.get("k_neighbors_classifier", {}).get("enabled", False):
             try:
+                logger.info("   🔧 Training: K-Neighbors...")
                 n_neighbors = params.get("k_neighbors_classifier", {}).get("n_neighbors", 5)
                 knn = KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1)
                 knn.fit(X_train, y_train)
                 target_models['k_neighbors_classifier'] = knn
                 total_models += 1
-                logger.debug(f"   ✓ K-Neighbors Classifier entrenado (n_neighbors={n_neighbors})")
+                logger.debug(f"      ✓ K-Neighbors entrenado (n_neighbors={n_neighbors})")
             except Exception as e:
-                logger.error(f"   ✗ Error en K-Neighbors Classifier: {e}")
+                logger.error(f"      ✗ Error en K-Neighbors Classifier: {e}")
         
-        trained_models[target] = target_models
+        # Guardar modelos y resultados del target
+        tuned_models[target] = target_models
+        tuning_results[target] = target_results
     
-    logger.info(f"✅ GridSearchCV completado: {len(tuning_results)} targets tunados")
+    logger.info(f"✅ GridSearchCV completado: {len(tuning_results)} targets tunados, {total_models} modelos totales")
     
     return {
         'tuned_models': tuned_models,
         'tuning_results': tuning_results
     }
-    
-def create_tuning_comparison_table(
-    tuned_regression_results: Dict[str, Any],
-    tuned_classification_results: Dict[str, Any],
-    regression_metrics: Dict[str, Any],
-    classification_metrics: Dict[str, Any]
-) -> Dict[str, Any]:
-    """
-    Genera tabla comparativa de modelos base vs tunados con mean±std.
-    
-    Cumple requisito de rúbrica: tabla comparativa con resultados de CV.
-    """
-    logger.info("📊 Generando tabla comparativa: Base vs Tunados")
-    
-    comparison = {
-        "regression": {},
-        "classification": {},
-        "summary": {}
-    }
-    
-    # Comparación REGRESIÓN
-    for target, tuning_info in tuned_regression_results['tuning_results'].items():
-        comparison["regression"][target] = {}
-        
-        for model_name, tuning_data in tuning_info.items():
-            # Métricas del modelo base (sin tuning)
-            base_r2 = regression_metrics.get(target, {}).get(model_name, {}).get('test', {}).get('r2', 0)
-            
-            # Métricas del modelo tunado
-            tuned_cv_mean = tuning_data['cv_mean']
-            tuned_cv_std = tuning_data['cv_std']
-            
-            comparison["regression"][target][model_name] = {
-                'base_r2': float(base_r2),
-                'tuned_cv_mean': float(tuned_cv_mean),
-                'tuned_cv_std': float(tuned_cv_std),
-                'improvement': float(tuned_cv_mean - base_r2),
-                'best_params': tuning_data['best_params'],
-                'formatted': f"{tuned_cv_mean:.3f} ± {tuned_cv_std:.3f}"
-            }
-            
-            logger.info(f"   {target}/{model_name}: Base={base_r2:.3f} → Tuned={tuned_cv_mean:.3f}±{tuned_cv_std:.3f}")
-    
-    # Comparación CLASIFICACIÓN
-    for target, tuning_info in tuned_classification_results['tuning_results'].items():
-        comparison["classification"][target] = {}
-        
-        for model_name, tuning_data in tuning_info.items():
-            # Métricas del modelo base
-            base_f1 = classification_metrics.get(target, {}).get(model_name, {}).get('test', {}).get('f1', 0)
-            
-            # Métricas del modelo tunado
-            tuned_cv_mean = tuning_data['cv_mean']
-            tuned_cv_std = tuning_data['cv_std']
-            
-            comparison["classification"][target][model_name] = {
-                'base_f1': float(base_f1),
-                'tuned_cv_mean': float(tuned_cv_mean),
-                'tuned_cv_std': float(tuned_cv_std),
-                'improvement': float(tuned_cv_mean - base_f1),
-                'best_params': tuning_data['best_params'],
-                'formatted': f"{tuned_cv_mean:.3f} ± {tuned_cv_std:.3f}"
-            }
-            
-            logger.info(f"   {target}/{model_name}: Base={base_f1:.3f} → Tuned={tuned_cv_mean:.3f}±{tuned_cv_std:.3f}")
-    
-    # Resumen
-    reg_improvements = [
-        data['improvement'] 
-        for target_data in comparison["regression"].values() 
-        for data in target_data.values()
-    ]
-    
-    clf_improvements = [
-        data['improvement'] 
-        for target_data in comparison["classification"].values() 
-        for data in target_data.values()
-    ]
-    
-    comparison["summary"] = {
-        "regression_avg_improvement": float(np.mean(reg_improvements)) if reg_improvements else 0,
-        "classification_avg_improvement": float(np.mean(clf_improvements)) if clf_improvements else 0,
-        "total_models_tuned": len(reg_improvements) + len(clf_improvements),
-        "cv_folds_used": 5
-    }
-    
-    logger.info(f"✅ Tabla comparativa generada")
-    logger.info(f"   📈 Mejora promedio regresión: {comparison['summary']['regression_avg_improvement']:.3f}")
-    logger.info(f"   📈 Mejora promedio clasificación: {comparison['summary']['classification_avg_improvement']:.3f}")
-    
-    return comparison
